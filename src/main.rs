@@ -1,3 +1,5 @@
+pub mod ls;
+pub mod ssh;
 use color_eyre::{
     Result,
     eyre::{WrapErr, bail},
@@ -25,6 +27,14 @@ fn main() -> Result<()> {
 pub struct App {
     counter: u8,
     exit: bool,
+}
+enum Events {
+    GainedFocus,
+    LostFocus,
+    StartedTransfer,
+    SourceSet,
+    DestinationSet,
+    ListRequested,
 }
 
 impl App {
@@ -157,4 +167,3 @@ mod tests {
         Ok(())
     }
 }
-
