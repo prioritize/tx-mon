@@ -1,5 +1,7 @@
 pub mod ls;
+pub mod rsync;
 pub mod ssh;
+pub mod tx_ssh;
 use color_eyre::{
     Result,
     eyre::{WrapErr, bail},
