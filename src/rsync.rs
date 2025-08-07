@@ -13,20 +13,28 @@ struct Transfer {
     bytes: u64,
 }
 
-fn dry_run(remote: String, user: String, pass: String, path: &Path) -> Result<Transfer> {
-    let str_path = path.to_str().unwrap();
+fn dry_run(
+    remote: String,
+    user: String,
+    pass: String,
+    src_path: &Path,
+    dest_path: &Path,
+) -> Result<Transfer> {
+    let src_path = src_path.to_str().unwrap();
+    let dest_path = dest_path.to_str().unwrap();
     let mut rsync = Command::new("sshpass");
     rsync
         .arg("-p")
         .arg(pass)
         .arg("rsync")
-        .arg("-avhn")
-        .arg("--progress")
+        .arg("--dry-run")
+        .arg("-avz")
         .arg("-e")
-        .arg("'ssh -p 2222'")
-        .arg(format!("{user}@{remote}:{str_path}"));
+        .arg(r#""ssh -p 2222""#)
+        .arg(format!("{user}@{remote}:{src_path}"))
+        .arg(dest_path);
 
-    println!("{:?}", rsync);
+    println!("{rsync:?}");
     let output = rsync.output()?;
     println!(
         "{}, {}",
@@ -53,7 +61,8 @@ mod tests {
             String::from("127.0.0.1"),
             String::from("secureuser"),
             String::from("changeme"),
-            Path::new("/"),
+            Path::new("/home/secureuser/"),
+            Path::new("~/junk"),
         );
         todo!()
     }

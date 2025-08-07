@@ -1,4 +1,9 @@
-use std::{env, io::Read, net::TcpStream};
+use std::{
+    env,
+    io::Read,
+    net::TcpStream,
+    path::{Path, PathBuf},
+};
 
 use color_eyre::Result;
 use ssh2::Session;
@@ -35,19 +40,36 @@ pub fn connect_remote(user: &str, port: u32) -> Result<Session> {
     assert!(sess.authenticated());
     Ok(sess)
 }
-pub fn ssh_command(sess: Session, command: &str) -> Result<String> {
-    let mut channel = sess.channel_session()?;
+pub fn ssh_command(session: Session, command: &str) -> Result<String> {
+    let mut channel = session.channel_session()?;
     channel.exec(command)?;
     let mut s = String::new();
     channel.read_to_string(&mut s)?;
-    println!("{s}");
     channel.wait_close().unwrap();
-    println!("{}", channel.exit_status()?);
-    Ok(s)
+    match channel.exit_status() {
+        Ok(_) => Ok(s),
+        Err(code) => Err(code.into()),
+    }
+}
+pub fn list_files(session: Session, path: &Path) -> Result<String> {
+    let file_list = ssh_command(session, &format!("ls -la {}", path.display()))?;
+    println!("{file_list}");
+    let (files, directories) = parse_ls(file_list)?;
+    todo!()
+}
+pub fn parse_ls(list: String) -> Result<(Vec<String>, Vec<String>)> {
+    let entries: Vec<Vec<String>> = list
+        .lines()
+        .map(|line| line.split(" ").map(|word| String::from(word)).collect())
+        .collect();
+    println!("{entries:?}");
+    todo!()
 }
 
 #[cfg(test)]
 mod tests {
+    use std::path::PathBuf;
+
     use super::*;
 
     #[test]
@@ -63,6 +85,12 @@ mod tests {
     fn test_ssh_command_ls() -> Result<()> {
         let sess = connect_local("secureuser", "changeme", 2222)?;
         let _ = ssh_command(sess, "ls");
+        Ok(())
+    }
+    #[test]
+    fn test_list_files() -> Result<()> {
+        let sess = connect_local("secureuser", "changeme", 2222)?;
+        let _ = list_files(sess, &PathBuf::from("~/"));
         Ok(())
     }
 }
